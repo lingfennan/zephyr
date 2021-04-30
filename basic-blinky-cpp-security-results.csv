@@ -1,0 +1,1 @@
+"Suspicious pointer scaling to char","Implicit scaling of pointer arithmetic expressions can cause buffer overflow conditions.","warning","This pointer might have type [[""struct <unnamed>""|""relative:///lib/os/heap.c:14:29:14:35""]] (size 8), but the pointer arithmetic here is done with type uint8_t * (size 1).","/lib/os/heap.c","14","29","14","35"

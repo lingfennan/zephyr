@@ -53,6 +53,7 @@
 /soc/arm/ti_simplelink/cc32xx/            @vanti
 /soc/arm/ti_simplelink/msp432p4xx/        @Mani-Sadhasivam
 /soc/arm/xilinx_zynqmp/                   @stephanosio
+/soc/arm/renesas_rcar/                    @julien-massot
 /soc/xtensa/intel_s1000/                  @sathishkuttan @dcpleung
 /soc/arm64/                               @carlocaione
 /soc/arm64/qemu_cortex_a53/               @carlocaione
@@ -60,6 +61,7 @@
 /soc/arm64/nxp_layerscape/                @JiafeiPan
 /soc/arm64/xenvm/                         @lorc
 /soc/arm64/arm/                           @povergoing
+/soc/arm64/arm/fvp_aemv8a/                @carlocaione
 /arch/x86/                                @jhedberg @nashif @jenmwms @aasthagr
 /arch/nios2/                              @nashif
 /arch/posix/                              @aescolar @daor-oti
@@ -83,6 +85,8 @@
 /boards/arm/96b_stm32_sensor_mez/         @Mani-Sadhasivam
 /boards/arm/96b_wistrio/                  @Mani-Sadhasivam
 /boards/arm/arduino_due/                  @ioannisg
+/boards/arm/blackpill_f401ce/             @coderkalyan
+/boards/arm/blackpill_f411ce/             @coderkalyan
 /boards/arm/bmd_345_eval/                 @Navin-Sankar
 /boards/arm/cc1352r1_launchxl/            @bwitherspoon
 /boards/arm/cc26x2r1_launchxl/            @bwitherspoon
@@ -129,6 +133,7 @@
 /boards/arm/stm32*_disco/                 @erwango @ABOSTM @FRASTM
 /boards/arm/stm32f3_disco/                @ydamigos
 /boards/arm/stm32*_eval/                  @erwango @ABOSTM @FRASTM
+/boards/arm/rcar_h3ulcb/                  @julien-massot
 /boards/common/                           @mbolivar-nordic
 /boards/deprecated.cmake                  @tejlmand
 /boards/nios2/                            @nashif
@@ -152,6 +157,7 @@
 /boards/arm64/nxp_ls1046ardb/             @JiafeiPan
 /boards/arm64/xenvm/                      @lorc
 /boards/arm64/fvp_baser_aemv8r/           @povergoing
+/boards/arm64/fvp_base_revc_2xaemv8a/     @carlocaione
 # All cmake related files
 /cmake/                                   @tejlmand @nashif
 /cmake/*/arcmwdt/                         @abrodkin @evgeniy-paltsev @tejlmand
@@ -182,6 +188,7 @@
 /drivers/can/*mcp2515*                    @karstenkoenig
 /drivers/clock_control/*nrf*              @nordic-krch
 /drivers/clock_control/*esp32*            @extremegtx
+/drivers/clock_control/*rcar*             @julien-massot
 /drivers/counter/                         @nordic-krch
 /drivers/console/ipm_console.c            @finikorg
 /drivers/console/semihost_console.c       @luozhongyao
@@ -214,6 +221,7 @@
 /drivers/gpio/*lmp90xxx*                  @henrikbrixandersen
 /drivers/gpio/*stm32*                     @erwango
 /drivers/gpio/*eos_s3*                    @wtatarski @kowalewskijan @kgugala
+/drivers/gpio/*rcar*                      @julien-massot
 /drivers/hwinfo/                          @alexanderwachter
 /drivers/i2s/i2s_ll_stm32*                @avisconti
 /drivers/i2c/i2c_common.c                 @sjg20
@@ -305,6 +313,7 @@
 /drivers/timer/cavs_timer.c               @dcpleung
 /drivers/timer/stm32_lptim_timer.c        @FRASTM
 /drivers/timer/leon_gptimer.c             @martin-aberg
+/drivers/timer/rcar_cmt_timer.c           @julien-massot
 /drivers/usb/                             @jfischer-no
 /drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
 /drivers/video/                           @loicpoulain
@@ -336,6 +345,7 @@
 /dts/arm/infineon/                        @parthitce
 /dts/arm64/                               @carlocaione
 /dts/arm64/armv8-r.dtsi                   @povergoing
+/dts/arm64/nxp/                           @JiafeiPan
 /dts/arm/quicklogic/                      @wtatarski @kowalewskijan @kgugala
 /dts/arm/st/                              @erwango
 /dts/arm/ti/cc13?2*                       @bwitherspoon
@@ -364,6 +374,7 @@
 /dts/arm/armv*m.dtsi                      @galak @ioannisg
 /dts/arm/armv7-r.dtsi                     @bbolen @stephanosio
 /dts/arm/xilinx/                          @bbolen @stephanosio
+/dts/arm/renesas/                         @julien-massot
 /dts/x86/                                 @jhedberg
 /dts/xtensa/xtensa.dtsi                   @ydamigos
 /dts/xtensa/intel/                        @dcpleung
@@ -389,6 +400,7 @@
 /dts/posix/                               @aescolar @vanwinkeljan @daor-oti
 /dts/bindings/sensor/*bme680*             @BoschSensortec
 /dts/bindings/sensor/st*                  @avisconti
+/dts/common/                              @galak
 /include/                                 @nashif @carlescufi @galak @MaureenHelm
 /include/drivers/*/*litex*                @mateusz-holenko @kgugala @pgielda
 /include/drivers/adc.h                    @anangl
@@ -448,7 +460,7 @@
 /include/dt-bindings/dma/stm32_dma.h      @cybertale
 /include/dt-bindings/pcie/                @dcpleung
 /include/dt-bindings/usb/usb.h            @galak
-/include/emul.h                           @sjg20
+/include/drivers/emul.h                   @sjg20
 /include/fs/                              @nashif @nvlsianpu @de-nordic
 /include/init.h                           @nashif @andyross
 /include/irq.h                            @dcpleung @nashif @andyross
@@ -527,6 +539,7 @@
 /scripts/coccinelle/                      @himanshujha199640 @JuliaLawall
 /scripts/coredump/                        @dcpleung
 /scripts/kconfig/                         @ulfalizer
+/scripts/logging/dictionary/              @dcpleung
 /scripts/pylib/twister/expr_parser.py     @nashif
 /scripts/schemas/twister/                 @nashif
 /scripts/gen_app_partitions.py            @dcpleung @nashif
@@ -537,6 +550,7 @@
 /arch/x86/gen_gdt.py                      @dcpleung @nashif
 /arch/x86/gen_idt.py                      @dcpleung @nashif
 /scripts/gen_kobject_list.py              @dcpleung @nashif
+/scripts/gen_kobject_placeholders.py      @dcpleung
 /scripts/gen_syscalls.py                  @dcpleung @nashif
 /scripts/list_boards.py                   @mbolivar-nordic
 /scripts/net/                             @jukkar

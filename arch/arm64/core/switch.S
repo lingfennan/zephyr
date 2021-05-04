@@ -35,15 +35,30 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	/* addr of callee-saved regs in thread in x2 */
 	add	x2, x1, x3
 
-	/* Save the current SP */
-	mov	x4, sp
+	/* Save the current SP_EL0 */
+	mrs	x4, sp_el0
 
 	stp	x19, x20, [x2, ___callee_saved_t_x19_x20_OFFSET]
 	stp	x21, x22, [x2, ___callee_saved_t_x21_x22_OFFSET]
 	stp	x23, x24, [x2, ___callee_saved_t_x23_x24_OFFSET]
 	stp	x25, x26, [x2, ___callee_saved_t_x25_x26_OFFSET]
 	stp	x27, x28, [x2, ___callee_saved_t_x27_x28_OFFSET]
-	stp	x29, x4, [x2, ___callee_saved_t_x29_sp_OFFSET]
+	stp	x29, x4,  [x2, ___callee_saved_t_x29_sp_el0_OFFSET]
+
+	/* Save the current SP_ELx */
+	mov	x4, sp
+	str	x4, [x2, ___callee_saved_t_sp_elx_OFFSET]
+
+	/* save current thread's exception depth */
+	mrs	x4, tpidrro_el0
+	lsr	x2, x4, #TPIDRROEL0_EXC_SHIFT
+	strb	w2, [x1, #_thread_offset_to_exception_depth]
+
+	/* retrieve next thread's exception depth */
+	ldrb	w2, [x0, #_thread_offset_to_exception_depth]
+	bic	x4, x4, #TPIDRROEL0_EXC_DEPTH
+	orr	x4, x4, x2, lsl #TPIDRROEL0_EXC_SHIFT
+	msr	tpidrro_el0, x4
 
 #ifdef CONFIG_SMP
 	/* save old thread into switch handle which is required by
@@ -72,8 +87,13 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldp	x23, x24, [x2, ___callee_saved_t_x23_x24_OFFSET]
 	ldp	x25, x26, [x2, ___callee_saved_t_x25_x26_OFFSET]
 	ldp	x27, x28, [x2, ___callee_saved_t_x27_x28_OFFSET]
-	ldp	x29, x1, [x2, ___callee_saved_t_x29_sp_OFFSET]
+	ldp	x29, x1,  [x2, ___callee_saved_t_x29_sp_el0_OFFSET]
 
+	/* Restore SP_EL0 */
+	msr	sp_el0, x1
+
+	/* Restore SP_EL1 */
+	ldr	x1, [x2, ___callee_saved_t_sp_elx_OFFSET]
 	mov	sp, x1
 
 #ifdef CONFIG_USERSPACE
@@ -104,6 +124,15 @@ SECTION_FUNC(TEXT, z_arm64_sync_exc)
 
 	mrs	x0, esr_el1
 	lsr	x1, x0, #26
+
+#ifdef CONFIG_FPU_SHARING
+	cmp	x1, #0x07 /*Access to SIMD or floating-point */
+	bne	1f
+	mov	x0, sp
+	bl	z_arm64_fpu_trap
+	b	z_arm64_exit_exc_fpu_done
+1:
+#endif
 
 	cmp	x1, #0x15 /* 0x15 = SVC */
 	bne	inv

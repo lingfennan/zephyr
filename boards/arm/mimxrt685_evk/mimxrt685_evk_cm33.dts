@@ -103,6 +103,15 @@
 	cpu-power-states = <&idle>;
 };
 
+/*
+ * RT600 EVK board uses OS timer as the kernel timer
+ * In case we need to switch to SYSTICK timer, then
+ * replace &os_timer with &systick
+ */
+&os_timer {
+	status = "okay";
+};
+
 &flexcomm0 {
 	compatible = "nxp,lpc-usart";
 	status = "okay";
@@ -132,6 +141,28 @@ arduino_spi: &flexcomm5 {
 	#size-cells = <0>;
 	dmas = <&dma0 10>, <&dma0 11>;
 	dma-names = "rx", "tx";
+};
+
+/* I2S receive channel */
+i2s0: &flexcomm1 {
+	status = "okay";
+	compatible = "nxp,lpc-i2s";
+	label = "I2S_0";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dmas = <&dma0 2>;
+	dma-names = "rx";
+};
+
+/* I2S transmit channel */
+i2s1: &flexcomm3 {
+	status = "okay";
+	compatible = "nxp,lpc-i2s";
+	label = "I2S_1";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dmas = <&dma0 7>;
+	dma-names = "tx";
 };
 
 &gpio0 {

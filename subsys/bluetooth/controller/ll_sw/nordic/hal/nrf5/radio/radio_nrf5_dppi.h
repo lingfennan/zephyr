@@ -55,8 +55,7 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(uint8_t trx)
 		}
 	}
 
-	nrf_dppi_channels_enable(
-		NRF_DPPIC, BIT(HAL_RADIO_ENABLE_ON_TICK_PPI));
+	nrf_dppi_channels_enable(NRF_DPPIC, BIT(HAL_RADIO_ENABLE_ON_TICK_PPI));
 }
 
 /*******************************************************************************
@@ -290,26 +289,33 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_END, HAL_SW_SWITCH_TIMER_CLEAR_PPI);
 	nrf_timer_subscribe_set(SW_SWITCH_TIMER,
 				NRF_TIMER_TASK_CLEAR, HAL_SW_SWITCH_TIMER_CLEAR_PPI);
+
+	/* NOTE: nRF5340 shares the DPPI channel being triggered by Radio End,
+	 *       for End time capture and sw_switch DPPI channel toggling, hence
+	 *       always need to capture End time.
+	 */
+	nrf_dppi_channels_enable(NRF_DPPIC,
+				 BIT(HAL_RADIO_END_TIME_CAPTURE_PPI));
 }
 
 /* The 2 adjacent PPI groups used for implementing SW_SWITCH_TIMER-based
  * auto-switch for TIFS. 'index' must be 0 or 1.
  */
 #define SW_SWITCH_TIMER_TASK_GROUP(index) \
-	(SW_SWITCH_TIMER_TASK_GROUP_BASE + index)
+	(SW_SWITCH_TIMER_TASK_GROUP_BASE + (index))
 
 /* The 2 adjacent TIMER EVENTS_COMPARE event offsets used for implementing
  * SW_SWITCH_TIMER-based auto-switch for TIFS. 'index' must be 0 or 1.
  */
 #define SW_SWITCH_TIMER_EVTS_COMP(index) \
-	(SW_SWITCH_TIMER_EVTS_COMP_BASE + index)
+	(SW_SWITCH_TIMER_EVTS_COMP_BASE + (index))
 
 /* The 2 adjacent TIMER EVENTS_COMPARE event offsets used for implementing
  * SW_SWITCH_TIMER-based auto-switch for TIFS, when receiving on LE Coded
  * PHY. 'index' must be 0 or 1.
  */
 #define SW_SWITCH_TIMER_S2_EVTS_COMP(index) \
-	(SW_SWITCH_TIMER_EVTS_COMP_S2_BASE + index)
+	(SW_SWITCH_TIMER_EVTS_COMP_S2_BASE + (index))
 
 /* Wire a SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to a PPI GROUP TASK DISABLE task (PPI group with index <index>).
@@ -318,7 +324,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  */
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE 14
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(index) \
-	(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE + index)
+	(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE + (index))
 
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_EVT(cc_offset) \
 	SW_SWITCH_TIMER->PUBLISH_COMPARE[cc_offset]
@@ -373,12 +379,12 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  */
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE 14
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI(index) \
-	(HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE + index)
+	(HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE + (index))
 
 #define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE \
 	HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE
 #define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(index) \
-	(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE + index)
+	(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE + (index))
 
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(cc_offset) \
 	SW_SWITCH_TIMER->PUBLISH_COMPARE[cc_offset]
@@ -445,11 +451,8 @@ static inline void hal_radio_sw_switch_setup(
 	    HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_TASK;
 
 	/* We need to un-subscribe the other group from the PPI channel. */
-	if (ppi_group_index == 0) {
-		HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_TASK(1)	= 0;
-	} else if (ppi_group_index == 1) {
-		HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_TASK(0)	= 0;
-	}
+	HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_TASK(
+		(ppi_group_index + 1) & 0x01) = 0;
 
 	/* Wire SW Switch timer event <compare_reg> to the
 	 * PPI[<radio_enable_ppi>] for enabling Radio. Do
@@ -464,6 +467,21 @@ static inline void hal_radio_sw_switch_setup(
 static inline void hal_radio_txen_on_sw_switch(uint8_t ppi)
 {
 	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_TXEN, ppi);
+}
+
+static inline void hal_radio_b2b_txen_on_sw_switch(uint8_t ppi)
+{
+	/* NOTE: Calling radio_tmr_start/radio_tmr_start_us/radio_tmr_start_now
+	 *       after the radio_switch_complete_and_b2b_tx() call would have
+	 *       changed the PPI channel to HAL_RADIO_ENABLE_ON_TICK_PPI as we
+	 *       cannot double buffer the subscribe buffer. Hence, lets have
+	 *       both DPPI channel enabled (other one was enabled by the DPPI
+	 *       group when the Radio End occurred) so that when both timer
+	 *       trigger one of the DPPI is correct in the radio tx
+	 *       subscription.
+	 */
+	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_TXEN, ppi);
+	nrf_dppi_channels_enable(NRF_DPPIC, BIT(ppi));
 }
 
 static inline void hal_radio_rxen_on_sw_switch(uint8_t ppi)
@@ -521,7 +539,7 @@ static inline void hal_radio_sw_switch_coded_tx_config_set(uint8_t ppi_en,
 		HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_TASK;
 
 	nrf_dppi_channels_enable(NRF_DPPIC,
-		BIT(HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI));
+				 BIT(HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI));
 }
 
 static inline void hal_radio_sw_switch_coded_config_clear(uint8_t ppi_en,

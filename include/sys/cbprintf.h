@@ -26,9 +26,9 @@ extern "C" {
  * - Clang 3.0 https://releases.llvm.org/3.0/docs/ClangReleaseNotes.html
  */
 #ifndef Z_C_GENERIC
-#if ((__STDC_VERSION__ >= 201112L) || \
+#if !defined(__cplusplus) && (((__STDC_VERSION__ >= 201112L) || \
 	((__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) >= 40900) || \
-	((__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__) >= 30000))
+	((__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__) >= 30000)))
 #define Z_C_GENERIC 1
 #else
 #define Z_C_GENERIC 0
@@ -47,6 +47,13 @@ extern "C" {
 /** @brief Required alignment of the buffer used for packaging. */
 #ifdef __xtensa__
 #define CBPRINTF_PACKAGE_ALIGNMENT 16
+#elif defined(CONFIG_X86) && !defined(CONFIG_64BIT)
+/* sizeof(long double) is 12 on x86-32, which is not power of 2.
+ * So set it manually.
+ */
+#define CBPRINTF_PACKAGE_ALIGNMENT \
+	(IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE) ? \
+		16 : MAX(sizeof(double), sizeof(long long)))
 #else
 #define CBPRINTF_PACKAGE_ALIGNMENT \
 	(IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE) ? \
